@@ -1,10 +1,11 @@
 import { useEffect } from "react";
 import { useAtom } from "jotai";
 import { userAtom } from "@/lib/jotai/store";
-import { pb } from "@/lib/pocketbase/db";
+import { createBrowserClient } from "@/lib/pocketbase/create-browser-client";
 
 const useUserWithRefresh = () => {
   const [user, setUser] = useAtom(userAtom);
+  const pb = createBrowserClient()
 
   const refreshUser = async () => {
     try {

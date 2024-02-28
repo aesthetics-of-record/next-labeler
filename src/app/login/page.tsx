@@ -1,35 +1,35 @@
-"use client";
+'use client';
 
-import { SignInFormSchema } from "@/lib/types/auth";
-import { SubmitHandler, useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { SignInFormSchema } from '@/lib/types/auth';
+import { SubmitHandler, useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import * as z from "zod";
-import { ClipLoader } from "react-spinners";
-import { useToast } from "@/components/ui/use-toast";
-import { pb } from "@/lib/pocketbase/db";
-import useUserWithRefresh from "@/hooks/useUserWithRefresh";
-import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import * as z from 'zod';
+import { ClipLoader } from 'react-spinners';
+import { useToast } from '@/components/ui/use-toast';
+import { createBrowserClient } from '@/lib/pocketbase/create-browser-client';
+import useUserWithRefresh from '@/hooks/useUserWithRefresh';
+import { Button } from '@/components/ui/button';
+import { useRouter } from 'next/navigation';
 
 const Signin = () => {
-  const { refreshUser } = useUserWithRefresh();
-  const { toast } = useToast();
   const route = useRouter();
+  const { toast } = useToast();
+  const pb = createBrowserClient();
 
   const form = useForm<z.infer<typeof SignInFormSchema>>({
-    mode: "onChange",
+    mode: 'onChange',
     resolver: zodResolver(SignInFormSchema),
     defaultValues: {
-      email: "",
-      password: "",
+      email: '',
+      password: '',
     },
   });
 
@@ -40,26 +40,26 @@ const Signin = () => {
   ) => {
     try {
       await pb
-        .collection("users")
+        .collection('users')
         .authWithPassword(formData.email, formData.password);
     } catch {
       toast({
-        title: "로그인 에러",
-        description: "로그인 정보가 유효하지 않습니다.",
+        title: '로그인 에러',
+        description: '로그인 정보가 유효하지 않습니다.',
       });
       return;
     }
 
     if (!pb.authStore.model!.verified) {
       toast({
-        title: "로그인 에러",
-        description: "먼저 이메일 인증을 해 주세요.",
+        title: '로그인 에러',
+        description: '먼저 이메일 인증을 해 주세요.',
       });
-      // route.push("/auth/confirm");
       return;
     }
 
-    refreshUser();
+    // 로그인 성공 시
+    route.push('/');
   };
 
   return (
@@ -82,7 +82,11 @@ const Signin = () => {
               render={({ field }) => (
                 <FormItem>
                   <FormControl>
-                    <Input type="email" placeholder="이메일" {...field} />
+                    <Input
+                      type="email"
+                      placeholder="이메일"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -98,7 +102,11 @@ const Signin = () => {
               render={({ field }) => (
                 <FormItem>
                   <FormControl>
-                    <Input type="password" placeholder="비밀번호" {...field} />
+                    <Input
+                      type="password"
+                      placeholder="비밀번호"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -106,38 +114,50 @@ const Signin = () => {
             ></FormField>
             <div className="h-4" />
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={isLoading}
+            >
               {!isLoading ? (
-                "로그인"
+                '로그인'
               ) : (
-                <ClipLoader color="hsla(168, 67%, 53%, 1)" size={20} />
+                <ClipLoader
+                  color="hsla(168, 67%, 53%, 1)"
+                  size={20}
+                />
               )}
             </Button>
             <div className="h-4" />
 
             <span className="flex text-sm">
-              <span className="mr-2 text-slate-400">처음 방문하셨나요 ?</span>
+              <span className="mr-2 text-slate-400">
+                처음 방문하셨나요 ?
+              </span>
               <span
                 className="text-gradient hover:underline underline-offset-4 cursor-pointer font-black"
                 onClick={() => {
-                  route.push("/auth/signup");
+                  route.push('/signup');
                 }}
               >
                 회원가입 하러가기
               </span>
             </span>
-            <Button
+            {/* <ButtonShimmer
               type="button"
               onClick={async () => {
-                await pb
+                const a = await pb
                   .collection("users")
-                  .requestVerification("hh08250419@gmail.com");
+                  .requestVerification("aaaapple123@naver.com");
+
+                console.log(a);
               }}
             >
               버튼
-            </Button>
+            </ButtonShimmer> */}
           </form>
         </div>
+        {/* <BackgroundBeams /> */}
       </div>
     </Form>
   );
