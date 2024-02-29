@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import Header from '@/components/header';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import Header from "@/components/header";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogClose,
@@ -10,12 +10,12 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { createBrowserClient } from '@/lib/pocketbase/create-browser-client';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { createBrowserClient } from "@/lib/pocketbase/create-browser-client";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 const Home = () => {
   const [projects, setProjects] = useState<any[]>([]); // 처음은 빈리스트
@@ -23,13 +23,13 @@ const Home = () => {
   const [formData, setFormData] = useState<{
     title: string;
     description: string;
-  }>({ title: '', description: '' });
+  }>({ title: "", description: "" });
   const pb = createBrowserClient();
 
   // 프로젝트 목록 가져오기
   const getProjects = () => {
-    pb.collection('projects')
-      .getFullList({ sort: 'created' })
+    pb.collection("projects")
+      .getFullList({ sort: "created" })
       .then((list: any) => {
         setProjects(list);
       });
@@ -48,10 +48,7 @@ const Home = () => {
         <section className="flex gap-4">
           <Dialog>
             <DialogTrigger asChild>
-              <Button
-                className="px-6"
-                size={'default'}
-              >
+              <Button className="px-6" size={"default"}>
                 프로젝트추가
               </Button>
             </DialogTrigger>
@@ -92,13 +89,14 @@ const Home = () => {
                     disabled={!(formData.title && formData.description)}
                     onClick={async () => {
                       // pb에 저장하기
-                      await pb.collection('projects').create({
+                      await pb.collection("projects").create({
                         title: formData.title,
                         description: formData.description,
                       });
 
                       getProjects();
                     }}
+                    type="button"
                   >
                     <DialogClose>완료</DialogClose>
                   </Button>
@@ -109,8 +107,8 @@ const Home = () => {
 
           <Button
             className="px-6"
-            size={'default'}
-            variant={'outline'}
+            size={"default"}
+            variant={"outline"}
             onClick={() => {
               getProjects();
             }}
@@ -125,7 +123,7 @@ const Home = () => {
             <Card
               key={project.id}
               onClick={() => {
-                route.push('/project/' + project?.id); // 프로젝트 디테일로 이동
+                route.push("/project/" + project?.id); // 프로젝트 디테일로 이동
               }}
             >
               <CardContent>
