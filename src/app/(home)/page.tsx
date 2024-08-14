@@ -2,7 +2,7 @@
 
 import Header from "@/components/header";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogClose,
@@ -13,92 +13,107 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { createBrowserClient } from "@/lib/pocketbase/create-browser-client";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { ChangeEvent, useEffect, useState } from "react";
+import axios from "axios";
+import { useToast } from "@/components/ui/use-toast";
 
 const Home = () => {
   const [projects, setProjects] = useState<any[]>([]); // 처음은 빈리스트
   const route = useRouter();
-  const [formData, setFormData] = useState<{
-    title: string;
-    description: string;
-  }>({ title: "", description: "" });
-  const pb = createBrowserClient();
+  const [file, setFile] = useState(null);
+  const { toast } = useToast();
 
-  // 프로젝트 목록 가져오기
-  const getProjects = () => {
-    pb.collection("projects")
-      .getFullList({ sort: "created" })
-      .then((list: any) => {
-        setProjects(list);
+  const handleFileChange = (event: any) => {
+    setFile(event.target.files[0]); // 파일을 상태로 설정
+  };
+
+  // 파일 목록 가져오기
+  const getFiles = () => {
+    axios.get("/api/file").then((res) => {
+      setProjects(res.data);
+    });
+  };
+
+  const handleSubmit = async () => {
+    if (!file) {
+      alert("파일을 선택해주세요.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file); // 파일을 FormData에 추가
+
+    try {
+      const response = await fetch("/api/file", {
+        method: "POST",
+        body: formData,
       });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log("파일 업로드 성공:", result);
+
+        getFiles();
+      } else {
+        console.error("파일 업로드 실패:", response.statusText);
+      }
+    } catch (error) {
+      console.error("파일 업로드 중 에러 발생:", error);
+    }
   };
 
   useEffect(() => {
-    getProjects();
+    getFiles();
   }, []);
 
   return (
     <main className="p-4 space-y-4 w-[1200px]">
       <Header
-        title="PROJECT"
-        description="새로운 프로젝트를 추가할 수 있습니다."
+        title="INFERENCE FILES"
+        description="추론할 파일을 업로드 할 수 있습니다."
       >
         <section className="flex gap-4">
           <Dialog>
             <DialogTrigger asChild>
-              <Button className="px-6" size={"default"}>
-                프로젝트추가
-              </Button>
+              <Button className="px-6">추론할 파일 업로드</Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>프로젝트 추가</DialogTitle>
+                <DialogTitle>추론할 파일 업로드</DialogTitle>
               </DialogHeader>
               <form className="space-y-4">
                 <section className="flex gap-2">
-                  <Label className="font-bold flex items-center w-[50px]">
-                    제목
+                  <Label className="font-bold flex items-center w-[80px]">
+                    파일(zip)
                   </Label>
                   <Input
-                    id="title"
-                    value={formData.title}
-                    onChange={(e) =>
-                      setFormData({ ...formData, title: e.target.value })
-                    }
-                  />
-                </section>
-                <section className="flex gap-2">
-                  <Label className="font-bold flex items-center w-[50px]">
-                    내용
-                  </Label>
-                  <Input
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        description: e.target.value,
-                      })
-                    }
+                    id="file"
+                    type="file"
+                    accept=".zip,.rar,.7z"
+                    onChange={handleFileChange} // 파일 변경 시 상태 업데이트
                   />
                 </section>
                 <section className="flex justify-end">
                   <Button
-                    disabled={!(formData.title && formData.description)}
+                    disabled={!file}
                     onClick={async () => {
-                      // pb에 저장하기
-                      await pb.collection("projects").create({
-                        title: formData.title,
-                        description: formData.description,
+                      toast({
+                        title: "AI 추론 진행 중 입니다...",
+                        description:
+                          "잠시만 기다려 주세요. 최대 1분이 소요됩니다..",
+                        duration: 20000
                       });
-
-                      getProjects();
+                      await handleSubmit();
+                      toast({
+                        title: "추론 및 업로드 성공 !",
+                        description: "파일을 다운 받으실 수 있습니다.",
+                        duration: 10000
+                      });
                     }}
                     type="button"
                   >
-                    <DialogClose>완료</DialogClose>
+                    <DialogClose>업로드</DialogClose>
                   </Button>
                 </section>
               </form>
@@ -107,28 +122,30 @@ const Home = () => {
 
           <Button
             className="px-6"
-            size={"default"}
             variant={"outline"}
             onClick={() => {
-              getProjects();
+              getFiles();
             }}
           >
             새로고침
           </Button>
         </section>
       </Header>
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {projects.map((project: any) => {
           return (
-            <Card
-              key={project.id}
-              onClick={() => {
-                route.push("/project/" + project?.id); // 프로젝트 디테일로 이동
-              }}
-            >
+            <Card key={project._id}>
               <CardContent>
-                <div>{project?.title}</div>
-                <div>{project?.description}</div>
+                <CardHeader>
+                  <CardTitle>{project?.origin_name}</CardTitle>
+                </CardHeader>
+                <CardFooter>
+                <div>
+                  <a href={`/api/download/${project?._id}`} download>
+                    <Button>다운로드</Button>
+                  </a>
+                </div>
+                </CardFooter>
               </CardContent>
             </Card>
           );
